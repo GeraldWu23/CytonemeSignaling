@@ -116,8 +116,8 @@ class ThreeClassifier:
         plt.scatter(prediction_2[:,0], prediction_2[:,1], c='C2', marker='.', label = '2')
         plt.legend()
         plt.title('PREDICTION')
-        plt.xlim(-1,2)
-        plt.ylim(-1,2)
+#        plt.xlim(-1,2)
+#        plt.ylim(-1,2)
 #        plt.clf()
         
         return 

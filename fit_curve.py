@@ -55,7 +55,6 @@ class fit_model:
         
         if graph:
             pred_y = func(np.array(np.linspace(-90,90,num=50)), popt[0], popt[1])
-    #        plt.figure(figsize = (10,7))
             plt.plot(xlist, ylist, marker = 'o',c=inputc, label = inputname + 
                      '  threshold : '+str(round(popt[0],3)))
             plt.plot(np.linspace(-90,90,num=50), pred_y,c = predictc, marker = '.',
@@ -63,6 +62,7 @@ class fit_model:
             plt.legend(fontsize = 12)
             if title:
                 plt.title(title)
+        
         return popt[0],  popt[1]
         
         

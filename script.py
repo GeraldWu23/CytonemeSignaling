@@ -21,6 +21,8 @@ import subprocess as sp
 
 class Analyse:
     '''
+      analyse a file, input its path  
+    
       self.visualise_data() : visualise the data with two boundaries represented by a dashed line
       self.view_predict : view data with their predicted label
       self.view_ROC_AUC() : view the ROC curves and AUC values of this dataset 
@@ -32,7 +34,7 @@ class Analyse:
         self.path = path
         
         self.kernel = kernel
-        # the kernel the classifier uses
+        # the kernel the classifier uses(rbf, default = linear, polynomial)
         
         self.gamma = gamma
         # kernel coefficient for poly and rbf 
@@ -48,6 +50,10 @@ class Analyse:
         
         self.classifier = ThreeClassifier(path, self.kernel, C = self.C, gamma = self.gamma, degree=self.degree)  
         # train a classifier for this dataset
+        
+        self.X = self.reader.data
+        
+        self.t = self.reader.label
         
         self.Xte = self.reader.Xte  
         # test data
@@ -77,6 +83,7 @@ class Analyse:
             # the infomation of two boundaries
         
     def accuracy(self):
+        ''' the accuracy of the prediction '''
         return np.mean(self.prediction[2,:] == self.prediction[3,:])
     
     def visualise_data(self):
@@ -94,8 +101,8 @@ class Analyse:
         plt.scatter(data1[:,0], data1[:,1], c=['C1']*len(data1), marker = '.', label = 1)
         plt.scatter(data2[:,0], data2[:,1], c=['C2']*len(data2), marker = '.', label = 2)
         plt.legend()
-        plt.xlim(-1,2)
-        plt.ylim(-1,2)
+#        plt.xlim(-1,2)
+#        plt.ylim(-1,2)
         
         if self.kernel == 'linear':
             plot_hyperplane(self.svm01, 0, 2, 'dashed')
@@ -133,8 +140,8 @@ class Analyse:
         axs[0].scatter(data1[:,0], data1[:,1], c=['C1']*len(data1), marker = '.', label = 1)
         axs[0].scatter(data2[:,0], data2[:,1], c=['C2']*len(data2), marker = '.', label = 2)
         axs[0].legend(fontsize = 12, loc=2)
-        axs[0].set_xlim(-1,2)
-        axs[0].set_ylim(-1,2)
+#        axs[0].set_xlim(-1,2)
+#        axs[0].set_ylim(-1,2)
         axs[0].set_title('All data'+'  kernel: '+ self.kernel , fontsize = 15)
         
         
@@ -150,8 +157,8 @@ class Analyse:
         axs[1].scatter(prediction_2[:,0], prediction_2[:,1], c='C2', marker='.', label = '2')
         axs[1].legend(fontsize = 12, loc=2)
         axs[1].set_title('PREDICTION accuracy: '+str(self.accuracy())+ '   C: '+str(self.C)+'   gamma: '+str(self.gamma), fontsize = 12)
-        axs[1].set_xlim(-1,2)
-        axs[1].set_ylim(-1,2)
+#        axs[1].set_xlim(-1,2)
+#        axs[1].set_ylim(-1,2)
         
         return True
     
@@ -159,6 +166,7 @@ class Analyse:
     def get_boundary_ROC(self, k, b, tar_lab, data, label):
         '''
         get TPR and FPR for a specific boundary, the boundary depends on the input data
+        
         must be linear kernel
         
         k = slope of the boundary
@@ -366,8 +374,8 @@ class Analyse:
         plt.scatter(data_True[:, 0],data_True[:, 1],c='gray', marker='.', label = 'True')
         plt.scatter(data_False[:,0],data_False[:,1],c='#fa5fa0', marker='.', label = 'False')
         plt.legend()
-        plt.xlim(-1,2)
-        plt.ylim(-1,2)
+#        plt.xlim(-1,2)
+#        plt.ylim(-1,2)
         if title:
             plt.title(title+self.kernel+'  degree: '+str(self.degree))
             
@@ -418,13 +426,13 @@ class Analyse:
     # get theta tpr pair to view the tpr against theta
     
     
-    def view_TPR_theta(self):
+    def view_TPR_theta(self, theta_range=np.linspace(-90, 90, num = 100)):
         '''
         view TPR against Theta
         best for linear kernel
         
+        theta_range =  chosen angle of boundaries
         '''
-        theta_range = np.linspace(-90, 90, num = 100)  # chosen angle of boundaries
         
         plt.figure(figsize=(10,7))
         
@@ -460,13 +468,15 @@ class Analyse:
         '''
 
         # copy to a new data set
-        data = self.Xte.copy()
-        label = self.tte.copy()
+#        data = self.Xte.copy()
+#        label = self.tte.copy()
+        data = self.X.copy()
+        label = self.t.copy()
         
         prob_01 = []  # probability of target point (True or False) for bound01
         prob_12 = []  # probability of target point (True or False) for bound12
         
-        for t in range(len(theta_list) - 1):  # for each starting angle of a boundary
+        for t in [ang for ang in range(len(theta_list) - 1)][::-1]:  # for each starting angle of a boundary
             
             #  upper bound: y = tan(theta_list[t] / 180 * pi)   * x
             #  lower bound: y = tan(theta_list[t+1] / 180 * pi) * x
@@ -492,10 +502,10 @@ class Analyse:
                     remove_list.append(d)
                     
                     # if target_label for boundary 01
-                    if (lab <= 0) == cell_label:
+                    if (lab >= 1) == cell_label:
                         tar_count_01 += 1      
                     # if target_label for boundary 12
-                    if (lab <= 1) == cell_label:
+                    if (lab >= 2) == cell_label:
                         tar_count_12 += 1
                         
             
@@ -517,7 +527,7 @@ class Analyse:
 
 
 
-    def view_TPR_delta_theta(self, theta_list, cell_label = True, sample = 50, title = None):
+    def view_TPR_delta_theta(self, cell_label = True, sample = 50, title = None):
         '''
         return values for probability distribution
         best for linear kernel
@@ -528,16 +538,57 @@ class Analyse:
         title = title of graph
         '''
         
-        plt.figure(figsize=(10,7))
-        c01,c12 = self.TPR_delta_theta(np.linspace(-90,90, num = sample), cell_label=cell_label)
+        plt.figure(figsize=(12,5))
+        c01,c12 = self.TPR_delta_theta(np.linspace(0, 90, num = sample+1), cell_label=cell_label)
         plt.plot(c01, label = 'boundary 01')
         plt.plot(c12, label = 'boundary 12')
         if title:
             plt.title(title, fontsize=15)
         plt.legend(fontsize=12)
-        plt.xticks(np.linspace(1, sample, num=10), [round(tick) for tick in np.linspace(-90, 90, num=10)])
+        plt.xticks(np.linspace(1, sample, num=10), [round(tick) for tick in np.linspace(0, 90, num=10)])
         plt.show()
         
+    
+    def view_boltzmann_model(self, graph = True, sample = 50, title = None):
+        ''' 
+        get the TPR against the angle
+        
+        '''
+        
+        xticks   = np.linspace(0, 90, num = sample)    # windows no
+        xticks_b = np.linspace(0, 90, num = sample+1)  # boundary no
+        
+        c01, c12 = self.TPR_delta_theta(xticks_b)
+        fit_01 = fit_model(xticks, c01)
+        sigma01, b01 = fit_01.plot_model(xticks, c01, fit_01.Boltzmann, graph = False, inputc='C0', predictc='C2',
+                          inputname='Boundary 01', predictname='Model       01')
+        fit_12 = fit_model(xticks, c12)
+        sigma12, b12 = fit_12.plot_model(xticks, c12, fit_12.Boltzmann, graph = False, inputc='C1', predictc='C3',
+                          inputname='Boundary 12', predictname='Model       12')
+        
+        # show sigma and b
+        print
+        print(sigma01, b01)
+        print(sigma12, b12)
+        print
+        print
+        
+        pred_y01 = fit_01.Boltzmann(xticks, sigma01, b01)
+        pred_y12 = fit_12.Boltzmann(xticks, sigma12, b12)
+        
+        plt.figure(figsize=(12,5))
+        plt.plot(xticks, c01, 'o', label = 'boundary 01', c = 'C0')
+        plt.plot(xticks, c12, 'o', label = 'boundary 12', c = 'C3')
+        plt.plot(xticks, pred_y01, label = 'model 01', c = 'C2')
+        plt.plot(xticks, pred_y12, label = 'model 12', c = 'C1')
+        plt.xticks(np.linspace(0, 90, num = 50)[::-1])
+        plt.xlabel('angle')
+        plt.ylabel('TPR')
+        plt.legend()
+        if title:
+            plt.title(title, fontsize = 15)
+        
+        return True
         
     
 
@@ -546,7 +597,7 @@ def Paths(prefix):
     
     for i in range(1, 101):
         number_code = str(i)
-        while(len(number_code)<5):  number_code = '0'+number_code
+        while(len(number_code) < 5):  number_code = '0'+number_code
         number_code = (prefix + '/coords_' + number_code + '.dat')
         yield number_code
     # yield a path in a group
@@ -597,7 +648,7 @@ class SharpnessMeasurement:
             
             # c01, c12 are TPR data for boundary_01 and boundary_12
             # fit the model
-            c01,c12 = ana.TPR_delta_theta(np.linspace(-90,90, num = 51), cell_label=True)
+            c01,c12 = ana.TPR_delta_theta(np.linspace(0,90, num = 51), cell_label=True)
             
             xlist = np.linspace(-90,90,num=50)
             
@@ -621,7 +672,7 @@ class SharpnessMeasurement:
         print('\n\nFinish')
         
         # devide b01 and b12
-        plt.figure(figsize=(10,7))
+        plt.figure(figsize=(12,5))
         plt.xlabel('sharp', fontsize=12)
         plt.ylabel('b in Boltzmann') 
         blistT = np.array(blist).T
@@ -668,7 +719,7 @@ class SharpnessMeasurement:
             return auclist
         
         # devide b01 and b12
-        plt.figure(figsize=(10,7))
+        plt.figure(figsize=(12,5))
         plt.xlabel('sharp', fontsize=12)
         plt.ylabel('AUC') 
         auclistT = np.array(auclist).T
@@ -678,10 +729,11 @@ class SharpnessMeasurement:
         plt.xticks([i*10 for i in range(10)], xlist)
         plt.title(title,fontsize=15)  
         
+        
         return auclist
     
     
-    def distance(self, graph = True, title = 'no title', xlist = [round(0.5 - 0.05 * i, 2) for i in range(10)],angular = True):
+    def distance(self, graph = True, title = 'no title', xlist = [round(0.5 - 0.05 * i, 2) for i in range(10)], angular = True):
         ''' describe the sharpness of the document with angular distance or raw distance 
             
             graph = show the graph or not
@@ -727,7 +779,7 @@ class SharpnessMeasurement:
         
         dislist = np.array(dislist).T
         
-        plt.figure(figsize=(10,7))
+        plt.figure(figsize=(12,5))
         plt.xlabel('sharp', fontsize=12)
         plt.ylabel('distance') 
 #        dislistT = np.array(dislist).T
@@ -735,7 +787,7 @@ class SharpnessMeasurement:
         plt.plot(dislist[1], label='b12')
         plt.legend()
         plt.xticks([i*10 for i in range(10)], xlist)
-        plt.ylim((0,1))
+#        plt.ylim((0,1))
         plt.title(title,fontsize=15) 
         
         return dislist
@@ -868,8 +920,19 @@ if __name__ == '__main__':
     path2 = 'D:/CytonemeSignaling/testDataNonlinearMonotonic/testDataNonlinearMonotonic/coords_00019.dat'
     path3 = 'D:/CytonemeSignaling/testDataNonlinearNonMonotonic/testDataNonlinearNonMonotonic/coords_00013.dat'
     path4 = 'D:/CytonemeSignaling/testDataStudySharpness_linear/SameSharpness/coords_00066.dat'
-        
-
+    testpath = 'D:/CytonemeSignaling/testText.txt'
+    
+    ana = Analyse(testpath)
+#    xticks = np.linspace(0, 90, num = 50)
+#    xticks_b = np.linspace(0, 90, num = 51)
+#    c01, c12 = ana.TPR_delta_theta(xticks_b)
+#    
+#    cur = fit_model(xticks, c01)
+#    cur.plot_model(xticks, c01, cur.Boltzmann)
+    
+    ana.view_TPR_delta_theta(title = 'TPR and Boltzmann in one dataset')
+    ana.view_boltzmann_model(title = 'TPR and Boltzmann in one dataset')
+    
     sp.call('cls', shell=True)
     
     
