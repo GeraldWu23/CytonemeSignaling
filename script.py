@@ -566,6 +566,7 @@ class Analyse:
         sigma12, b12 = fit_12.plot_model(xticks, c12, fit_12.Boltzmann, graph = False, inputc='C1', predictc='C3',
                           inputname='Boundary 12', predictname='Model       12')
         
+        
         # show sigma and b
         print
         print(sigma01, b01)
@@ -581,9 +582,13 @@ class Analyse:
         plt.plot(xticks, c12, 'o', label = 'boundary 12', c = 'C3')
         plt.plot(xticks, pred_y01, label = 'model 01', c = 'C2')
         plt.plot(xticks, pred_y12, label = 'model 12', c = 'C1')
-        plt.xticks(np.linspace(0, 90, num = 50)[::-1])
+        plt.xticks(np.linspace(0, 90, num = 10)[::-1])
         plt.xlabel('angle')
         plt.ylabel('TPR')
+        plt.text(0, 0.4, 'sigma01: '+str(round(sigma01,3)))
+        plt.text(0, 0.3, 'b01: '+str(round(b01,3)))
+        plt.text(0, 0.2, 'sigma12: '+str(round(sigma12,3)))
+        plt.text(0, 0.1, 'b12: '+str(round(b12,3)))
         plt.legend()
         if title:
             plt.title(title, fontsize = 15)
