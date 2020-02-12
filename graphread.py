@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+py# -*- coding: utf-8 -*-
 """
 Created on Thu Nov 14 20:09:55 2019
 
@@ -158,6 +158,7 @@ def analyse(image_path):
     plt.figure()
     
     # intensity list
+    print(maxx, minx)
     inten_li = intensity(imgGRAY_rot, minx, miny, maxx, maxy)
     inten_li_norm = [(i - min(inten_li)) / (max(inten_li) - min(inten_li)) for i in inten_li] 
     
